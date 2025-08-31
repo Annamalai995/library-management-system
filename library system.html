@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Library Management System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#1E40AF',
+                        secondary: '#3B82F6',
+                        accent: '#F59E0B',
+                        success: '#10B981',
+                        danger: '#EF4444',
+                        dark: '#1F2937',
+                        light: '#F9FAFB'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+        }
+        
+        .modal-content {
+            background: white;
+            margin: 10% auto;
+            padding: 2rem;
+            border-radius: 1rem;
+            max-width: 500px;
+            animation: modalSlideIn 0.3s ease;
+        }
+        
+        @keyframes modalSlideIn {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        
+        .sidebar {
+            width: 250px;
+            transition: all 0.3s ease;
+        }
+        
+        .main-content {
+            margin-left: 250px;
+            transition: all 0.3s ease;
+        }
+        
+        .sidebar.collapsed {
+            width: 80px;
+        }
+        
+        .sidebar.collapsed + .main-content {
+            margin-left: 80px;
+        }
+        
+        .chart-bar {
+            transition: all 0.3s ease;
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+    <!-- Login Modal -->
+    <div id="loginModal" class="modal">
+        <div class="modal-content">
+            <div class="text-center mb-6">
+                <div class="w-16 h-16 bg-primary rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-book text-white text-2xl"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-dark">Library Management</h2>
+                <p class="text-gray-600">Sign in to your account</p>
+            </div>
+            
+            <form id="loginForm" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                    <input type="email" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" placeholder="admin@library.com">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                    <input type="password" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" placeholder="••••••••">
+                </div>
+                <button type="submit" class="w-full bg-primary text-white py-2 rounded-lg font-semibold hover:bg-blue-700 transition-colors">
+                    Sign In
+                </button>
+            </form>
+            
+            <p class="text-center text-sm text-gray-600 mt-4">
+                Demo: Use any credentials to login
+            </p>
+        </div>
+    </div>
+
+    <!-- Main Layout (Initially Hidden) -->
+    <div id="mainLayout" class="hidden">
+        <!-- Sidebar -->
+        <div class="sidebar fixed left-0 top-0 h-full bg-dark text-white p-4">
+            <div class="flex items-center justify-between mb-8">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
+                        <i class="fas fa-book text-white"></i>
+                    </div>
+                    <span class="text-xl font-semibold">LibManager</span>
+                </div>
+                <button onclick="toggleSidebar()" class="text-gray-400 hover:text-white">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+            
+            <nav class="space-y-2">
+                <a href="#dashboard" class="sidebar-item flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-700 transition-colors">
+                    <i class="fas fa-home w-5"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#books" class="sidebar-item flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-700 transition-colors">
+                    <i class="fas fa-book w-5"></i>
+                    <span>Books</span>
+                </a>
+                <a href="#members" class="sidebar-item flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-700 transition-colors">
+                    <i class="fas fa-users w-5"></i>
+                    <span>Members</span>
+                </a>
+                <a href="#transactions" class="sidebar-item flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-700 transition-colors">
+                    <i class="fas fa-exchange-alt w-5"></i>
+                    <span>Transactions</span>
+                </a>
+                <a href="#reports" class="sidebar-item flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-700 transition-colors">
+                    <i class="fas fa-chart-bar w-5"></i>
+                    <span>Reports</span>
+                </a>
+            </nav>
+            
+            <div class="absolute bottom-4 left-4 right-4">
+                <button onclick="logout()" class="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-700 transition-colors w-full">
+                    <i class="fas fa-sign-out-alt w-5"></i>
+                    <span>Logout</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content min-h-screen">
+            <!-- Header -->
+            <header class="glass-effect sticky top-0 z-50">
+                <div class="flex items-center justify-between p-4">
+                    <div class="flex items-center space-x-4">
+                        <h1 class="text-white text-xl font-semibold" id="pageTitle">Dashboard</h1>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <div class="relative">
+                            <input type="text" placeholder="Search..." class="bg-white/20 text-white placeholder-white/70 rounded-full px-4 py-2 pl-10 w-64 focus:ring-2 focus:ring-accent border-none">
+                            <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-white"></i>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 bg-accent rounded-full flex items-center justify-center">
+                                <span class="text-white font-semibold">A</span>
+                            </div>
+                            <span class="text-white">Admin</span>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Dashboard Content -->
+            <div class="p-6">
+                <!-- Stats Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <div class="card rounded-xl p-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-gray-600">Total Books</p>
+                                <h3 class="text-3xl font-bold text-primary">1,245</h3>
+                                <p class="text-sm text-success"><i class="fas fa-arrow-up mr-1"></i> 12% from last month</p>
+                            </div>
+                            <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                                <i class="fas fa-book text-primary text-xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card rounded-xl p-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-gray-600">Active Members</p>
+                                <h3 class="text-3xl font-bold text-secondary">856</h3>
+                                <p class="text-sm text-success"><i class="fas fa-arrow-up mr-1"></i> 8% from last month</p>
+                            </div>
+                            <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                                <i class="fas fa-users text-secondary text-xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card rounded-xl p-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-gray-600">Books Borrowed</p>
+                                <h3 class="text-3xl font-bold text-accent">324</h3>
+                                <p class="text-sm text-danger"><i class="fas fa-arrow-down mr-1"></i> 3% from last month</p>
+                            </div>
+                            <div class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
+                                <i class="fas fa-exchange-alt text-accent text-xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card rounded-xl p-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-gray-600">Overdue Books</p>
+                                <h3 class="text-3xl font-bold text-danger">28</h3>
+                                <p class="text-sm text-success"><i class="fas fa-arrow-down mr-1"></i> 15% from last month</p>
+                            </div>
+                            <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                                <i class="fas fa-exclamation-triangle text-danger text-xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts and Recent Activity -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                    <!-- Activity Chart -->
+                    <div class="card rounded-xl p-6 lg:col-span-2">
+                        <h3 class="text-xl font-semibold mb-4">Monthly Activity</h3>
+                        <div class="h-64">
+                            <div class="flex items-end space-x-2 h-48 mb-4">
+                                <div class="flex-1 flex flex-col items-center">
+                                    <div class="chart-bar bg-primary w-full rounded-t" style="height: 80%"></div>
+                                    <span class="text-sm text-gray-600 mt-2">Jan</span>
+                                </div>
+                                <div class="flex-1 flex flex-col items-center">
+                                    <div class="chart-bar bg-primary w-full rounded-t" style="height: 65%"></div>
+                                    <span class="text-sm text-gray-600 mt-2">Feb</span>
+                                </div>
+                                <div class="flex-1 flex flex-col items-center">
+                                    <div class="chart-bar bg-primary w-full rounded-t" style="height: 90%"></div>
+                                    <span class="text-sm text-gray-600 mt-2">Mar</span>
+                                </div>
+                                <div class="flex-1 flex flex-col items-center">
+                                    <div class="chart-bar bg-primary w-full rounded-t" style="height: 75%"></div>
+                                    <span class="text-sm text-gray-600 mt-2">Apr</span>
+                                </div>
+                                <div class="flex-1 flex flex-col items-center">
+                                    <div class="chart-bar bg-accent w-full rounded-t" style="height: 95%"></div>
+                                    <span class="text-sm text-gray-600 mt-2">May</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Recent Transactions -->
+                    <div class="card rounded-xl p-6">
+                        <h3 class="text-xl font-semibold mb-4">Recent Transactions</h3>
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                <div>
+                                    <p class="font-medium">The Great Gatsby</p>
+                                    <p class="text-sm text-gray-600">John Doe</p>
+                                </div>
+                                <span class="text-success text-sm">Borrowed</span>
+                            </div>
+                            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                <div>
+                                    <p class="font-medium">1984</p>
+                                    <p class="text-sm text-gray-600">Jane Smith</p>
+                                </div>
+                                <span class="text-danger text-sm">Returned</span>
+                            </div>
+                            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                <div>
+                                    <p class="font-medium">To Kill a Mockingbird</p>
+                                    <p class="text-sm text-gray-600">Mike Johnson</p>
+                                </div>
+                                <span class="text-success text-sm">Borrowed</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Books Table -->
+                <div class="card rounded-xl p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-xl font-semibold">Books Inventory</h3>
+                        <button onclick="openModal('addBookModal')" class="bg-primary text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                            <i class="fas fa-plus mr-2"></i>Add Book
+                        </button>
+                    </div>
+                    
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead>
+                                <tr class="border-b border-gray-200">
+                                    <th class="text-left py-3">Title</th>
+                                    <th class="text-left py-3">Author</th>
+                                    <th class="text-left py-3">ISBN</th>
+                                    <th class="text-left py-3">Category</th>
+                                    <th class="text-left py-3">Status</th>
+                                    <th class="text-left py-3">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="border-b border-gray-200 hover:bg-gray-50">
+                                    <td class="py-3">The Silent Patient</td>
+                                    <td class="py-3">Alex Michaelides</td>
+                                    <td class="py-3">978-1250301697</td>
+                                    <td class="py-3">Thriller</td>
+                                    <td class="py-3"><span class="px-2 py-1 bg-success/20 text-success rounded-full text-xs">Available</span></td>
+                                    <td class="py-3">
+                                        <button class="text-secondary hover:text-blue-700 mr-2">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="text-danger hover:text-red-700">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr class="border-b border-gray-200 hover:bg-gray-50">
+                                    <td class="py-3">Atomic Habits</td>
+                                    <td class="py-3">James Clear</td>
+                                    <td class="py-3">978-0735211292</td>
+                                    <td class="py-3">Self-Help</td>
+                                    <td class="py-3"><span class="px-2 py-1 bg-danger/20 text-danger rounded-full text-xs">Borrowed</span></td>
+                                    <td class="py-3">
+                                        <button class="text-secondary hover:text-blue-700 mr-2">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="text-danger hover:text-red-700">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Book Modal -->
+    <div id="addBookModal" class="modal">
+        <div class="modal-content">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-xl font-semibold">Add New Book</h2>
+                <button onclick="closeModal('addBookModal')" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <form class="space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Title</label>
+                        <input type="text" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Author</label>
+                        <input type="text" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary">
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">ISBN</label>
+                        <input type="text" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Category</label>
+                        <select class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary">
+                            <option>Fiction</option>
+                            <option>Non-Fiction</option>
+                            <option>Science</option>
+                            <option>History</option>
+                            <option>Biography</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                    <textarea rows="3" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary"></textarea>
+                </div>
+                
+                <div class="flex justify-end space-x-3">
+                    <button type="button" onclick="closeModal('addBookModal')" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
+                        Cancel
+                    </button>
+                    <button type="submit" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-blue-700">
+                        Add Book
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Show login modal on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('loginModal').style.display = 'block';
+        });
+
+        // Login functionality
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            document.getElementById('loginModal').style.display = 'none';
+            document.getElementById('mainLayout').classList.remove('hidden');
+        });
+
+        // Modal functions
+        function openModal(modalId) {
+            document.getElementById(modalId).style.display = 'block';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            if (event.target.className === 'modal') {
+                event.target.style.display = 'none';
+            }
+        }
+
+        // Sidebar toggle
+        function toggleSidebar() {
+            document.querySelector('.sidebar').classList.toggle('collapsed');
+        }
+
+        // Logout function
+        function logout() {
+            document.getElementById('mainLayout').classList.add('hidden');
+            document.getElementById('loginModal').style.display = 'block';
+        }
+
+        // Page navigation
+        document.querySelectorAll('.sidebar-item').forEach(item => {
+            item.addEventListener('click', function(e) {
+                e.preventDefault();
+                const page = this.getAttribute('href').substring(1);
+                document.getElementById('pageTitle').textContent = page.charAt(0).toUpperCase() + page.slice(1);
+                
+                // Add active class to clicked item
+                document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('bg-primary'));
+                this.classList.add('bg-primary');
+            });
+        });
+    </script>
+</body>
+</html>
